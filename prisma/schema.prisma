@@ -1,0 +1,688 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  password      String       // Hashed with bcrypt
+  name          String
+  role          UserRole     @default(STAFF)
+  status        UserStatus   @default(ACTIVE)
+  avatar        String?
+  phone         String?
+  lastLoginAt   DateTime?
+  
+  // Relations
+  createdClients     Client[]      @relation("CreatedByUser")
+  createdLeads       Lead[]        @relation("CreatedByUser")
+  createdProjects    Project[]     @relation("CreatedByUser")
+  createdBlogPosts   BlogPost[]    @relation("CreatedByUser")
+  activityLogs       ActivityLog[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([email])
+  @@index([role, status])
+  @@map("users")
+}
+
+// ============================================
+// CLIENT RELATIONSHIP MANAGEMENT (CRM)
+// ============================================
+
+enum ClientSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  ADVERTISING
+  COLD_OUTREACH
+  PARTNER
+  OTHER
+}
+
+enum ClientStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATING
+  ACTIVE
+  COMPLETED
+  INACTIVE
+  LOST
+}
+
+model Client {
+  id              String         @id @default(cuid())
+  
+  // Basic Info
+  name            String
+  email           String         @unique
+  phone           String?
+  company         String?
+  website         String?
+  
+  // CRM Fields
+  source          ClientSource
+  status          ClientStatus   @default(NEW)
+  priority        Int            @default(3) // 1=High, 2=Medium, 3=Low
+  
+  // Location
+  country         String?
+  city            String?
+  address         String?
+  
+  // Business Info
+  industry        String?
+  companySize     String?
+  budget          Decimal?       @db.Decimal(10, 2)
+  
+  // Tracking
+  firstContactAt  DateTime?
+  lastContactAt   DateTime?
+  convertedAt     DateTime?      // When converted from lead
+  
+  // Relations
+  createdBy       User           @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById     String
+  
+  projects        Project[]
+  bookings        Booking[]
+  quotations      Quotation[]
+  notes           ClientNote[]
+  activityLogs    ActivityLog[]  @relation("ClientActivity")
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("clients")
+}
+
+model ClientNote {
+  id          String    @id @default(cuid())
+  content     String    @db.Text
+  isPrivate   Boolean   @default(false)
+  
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("client_notes")
+}
+
+// ============================================
+// LEAD MANAGEMENT
+// ============================================
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+  LOST
+}
+
+model Lead {
+  id              String       @id @default(cuid())
+  
+  // Contact Info
+  name            String
+  email           String
+  phone           String?
+  company         String?
+  website         String?
+  
+  // Lead Details
+  source          ClientSource
+  status          LeadStatus   @default(NEW)
+  priority        Int          @default(3)
+  
+  // Interest
+  interestedIn    String?      // Services interested in
+  message         String?      @db.Text
+  budget          String?
+  timeline        String?
+  
+  // Tracking
+  contactedAt     DateTime?
+  qualifiedAt     DateTime?
+  convertedAt     DateTime?
+  convertedToClientId String?  @unique
+  
+  // Relations
+  createdBy       User         @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById     String
+  
+  activityLogs    ActivityLog[] @relation("LeadActivity")
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+// ============================================
+// PROJECT MANAGEMENT
+// ============================================
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectType {
+  WEB_DESIGN
+  WEB_DEVELOPMENT
+  MOBILE_APP
+  BRANDING
+  SEO
+  CONSULTING
+  OTHER
+}
+
+model Project {
+  id              String         @id @default(cuid())
+  
+  // Basic Info
+  title           String
+  slug            String         @unique
+  description     String         @db.Text
+  shortDescription String?       @db.Text
+  
+  // Project Details
+  type            ProjectType
+  status          ProjectStatus  @default(PLANNING)
+  
+  // Business
+  budget          Decimal?       @db.Decimal(10, 2)
+  actualCost      Decimal?       @db.Decimal(10, 2)
+  
+  // Dates
+  startDate       DateTime?
+  endDate         DateTime?
+  launchDate      DateTime?
+  
+  // Client
+  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  clientName      String         // Denormalized for display
+  
+  // Display
+  featured        Boolean        @default(false)
+  published       Boolean        @default(false)
+  featuredImage   String?
+  coverImage      String?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?        @db.Text
+  tags            String[]       // Array of tags
+  
+  // Website Info
+  websiteUrl      String?
+  githubUrl       String?
+  
+  // Relations
+  createdBy       User           @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById     String
+  
+  images          ProjectImage[]
+  services        ProjectService[] // Many-to-many via join table
+  testimonial     Testimonial?
+  activityLogs    ActivityLog[]  @relation("ProjectActivity")
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([slug])
+  @@index([clientId])
+  @@index([status])
+  @@index([published, featured])
+  @@index([createdById])
+  @@map("projects")
+}
+
+model ProjectImage {
+  id          String    @id @default(cuid())
+  url         String
+  altText     String?
+  caption     String?
+  order       Int       @default(0)
+  
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([projectId, order])
+  @@map("project_images")
+}
+
+// ============================================
+// SERVICES
+// ============================================
+
+model Service {
+  id              String           @id @default(cuid())
+  
+  // Basic Info
+  name            String
+  slug            String           @unique
+  description     String           @db.Text
+  shortDescription String?         @db.Text
+  
+  // Display
+  icon            String?
+  image           String?
+  featured        Boolean          @default(false)
+  published       Boolean          @default(true)
+  order           Int              @default(0)
+  
+  // Pricing (optional)
+  startingPrice   Decimal?         @db.Decimal(10, 2)
+  pricingNote     String?
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?          @db.Text
+  
+  // Features/Benefits (JSON array)
+  features        Json?
+  benefits        Json?
+  
+  // Relations
+  projects        ProjectService[]
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  @@index([slug])
+  @@index([published, featured])
+  @@index([order])
+  @@map("services")
+}
+
+// Join table for Project <-> Service (many-to-many)
+model ProjectService {
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId   String
+  
+  createdAt   DateTime  @default(now())
+  
+  @@id([projectId, serviceId])
+  @@index([projectId])
+  @@index([serviceId])
+  @@map("project_services")
+}
+
+// ============================================
+// CONTENT MANAGEMENT
+// ============================================
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id              String         @id @default(cuid())
+  
+  // Content
+  title           String
+  slug            String         @unique
+  excerpt         String?        @db.Text
+  content         String         @db.Text
+  
+  // Media
+  featuredImage   String?
+  imageAlt        String?
+  
+  // Status
+  status          BlogPostStatus @default(DRAFT)
+  featured        Boolean        @default(false)
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?        @db.Text
+  tags            String[]
+  category        String?
+  
+  // Engagement
+  views           Int            @default(0)
+  readTime        Int?           // in minutes
+  
+  // Publishing
+  publishedAt     DateTime?
+  
+  // Author
+  author          User           @relation("CreatedByUser", fields: [authorId], references: [id])
+  authorId        String
+  authorName      String         // Denormalized
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@index([featured])
+  @@map("blog_posts")
+}
+
+model Testimonial {
+  id              String    @id @default(cuid())
+  
+  // Client Info
+  clientName      String
+  clientRole      String?
+  clientCompany   String?
+  clientAvatar    String?
+  
+  // Content
+  content         String    @db.Text
+  rating          Int       @default(5) // 1-5 stars
+  
+  // Display
+  featured        Boolean   @default(false)
+  published       Boolean   @default(true)
+  
+  // Optional Project Link
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId       String?   @unique
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([published, featured])
+  @@index([projectId])
+  @@map("testimonials")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  
+  name        String
+  role        String
+  bio         String?  @db.Text
+  avatar      String?
+  email       String?
+  
+  // Social Links
+  linkedIn    String?
+  twitter     String?
+  github      String?
+  
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([published, order])
+  @@map("team_members")
+}
+
+// ============================================
+// BOOKING & QUOTATION MANAGEMENT
+// ============================================
+
+enum BookingStatus {
+  PENDING
+  REVIEWED
+  CONTACTED
+  QUOTED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum BookingType {
+  CONSULTATION
+  PROJECT_INQUIRY
+  SUPPORT
+  OTHER
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  
+  // Contact Info
+  name            String
+  email           String
+  phone           String?
+  company         String?
+  
+  // Booking Details
+  type            BookingType
+  status          BookingStatus @default(PENDING)
+  
+  // Service Interest
+  interestedIn    String?       // Services
+  message         String        @db.Text
+  budget          String?
+  timeline        String?
+  
+  // Preferred Contact
+  preferredDate   DateTime?
+  preferredTime   String?
+  
+  // Processing
+  reviewedAt      DateTime?
+  reviewedBy      String?       // User ID who reviewed
+  notes           String?       @db.Text
+  
+  // Conversion
+  convertedToQuotationId String? @unique
+  
+  // Client Link (if exists)
+  client          Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId        String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([clientId])
+  @@map("bookings")
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+model Quotation {
+  id              String          @id @default(cuid())
+  quotationNumber String          @unique // Q-2024-001
+  
+  // Client
+  client          Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  
+  // Quotation Details
+  title           String
+  description     String?         @db.Text
+  status          QuotationStatus @default(DRAFT)
+  
+  // Items (stored as JSON for flexibility)
+  items           Json            // [{service, description, quantity, rate, amount}]
+  
+  // Pricing
+  subtotal        Decimal         @db.Decimal(10, 2)
+  tax             Decimal?        @db.Decimal(10, 2)
+  discount        Decimal?        @db.Decimal(10, 2)
+  total           Decimal         @db.Decimal(10, 2)
+  currency        String          @default("USD")
+  
+  // Terms
+  validUntil      DateTime
+  terms           String?         @db.Text
+  notes           String?         @db.Text
+  
+  // Tracking
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  acceptedAt      DateTime?
+  rejectedAt      DateTime?
+  
+  // Conversion
+  convertedToProjectId String?    @unique
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@index([quotationNumber])
+  @@index([clientId])
+  @@index([status])
+  @@index([validUntil])
+  @@map("quotations")
+}
+
+// ============================================
+// ACTIVITY TRACKING
+// ============================================
+
+enum ActivityType {
+  // Client Activities
+  CLIENT_CREATED
+  CLIENT_UPDATED
+  CLIENT_STATUS_CHANGED
+  CLIENT_NOTE_ADDED
+  CLIENT_CONTACTED
+  
+  // Lead Activities
+  LEAD_CREATED
+  LEAD_UPDATED
+  LEAD_STATUS_CHANGED
+  LEAD_CONVERTED
+  
+  // Project Activities
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_STATUS_CHANGED
+  PROJECT_COMPLETED
+  
+  // Booking Activities
+  BOOKING_RECEIVED
+  BOOKING_REVIEWED
+  BOOKING_CONVERTED
+  
+  // Quotation Activities
+  QUOTATION_CREATED
+  QUOTATION_SENT
+  QUOTATION_ACCEPTED
+  QUOTATION_REJECTED
+  
+  // System Activities
+  USER_LOGIN
+  DATA_EXPORTED
+  SETTINGS_CHANGED
+}
+
+model ActivityLog {
+  id          String        @id @default(cuid())
+  
+  type        ActivityType
+  description String
+  metadata    Json?         // Additional context
+  ipAddress   String?
+  
+  // Polymorphic Relations (link to any entity)
+  entityType  String?       // "Client", "Lead", "Project", etc.
+  entityId    String?       // ID of the entity
+  
+  // Direct Relations for convenience
+  client      Client?       @relation("ClientActivity", fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String?
+  
+  lead        Lead?         @relation("LeadActivity", fields: [leadId], references: [id], onDelete: Cascade)
+  leadId      String?
+  
+  project     Project?      @relation("ProjectActivity", fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String?
+  
+  // User who performed the action
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String
+  
+  createdAt   DateTime      @default(now())
+  
+  @@index([type, createdAt])
+  @@index([entityType, entityId])
+  @@index([clientId])
+  @@index([leadId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@index([key])
+  @@map("system_settings")
+}

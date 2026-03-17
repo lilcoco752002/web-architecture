@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Premium Neutral Foundation */
+    --background: 0 0% 99%;
+    --surface: 0 0% 98%;
+    --surface-elevated: 0 0% 97%;
+    
+    /* Text Hierarchy - Deep charcoal to light gray */
+    --foreground: 0 0% 9%;
+    --foreground-secondary: 0 0% 45%;
+    --foreground-tertiary: 0 0% 65%;
+    
+    /* Card System */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    
+    /* Popover/Modal */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    
+    /* Accent - Sophisticated Bronze (not orange!) */
+    --primary: 25 45% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 25 30% 35%;
+    --primary-light: 25 55% 96%;
+    
+    /* Secondary - Neutral gray */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    
+    /* Accent (bright highlight) */
+    --accent: 25 55% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Semantic Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+    
+    /* Borders & Dividers - Subtle to strong */
+    --border-subtle: 0 0% 93%;
+    --border: 0 0% 88%;
+    --border-strong: 0 0% 78%;
+    
+    /* Input */
+    --input: 0 0% 88%;
+    --ring: 25 45% 45%;
+    
+    /* Border Radius */
+    --radius: 0.75rem;
+    
+    /* Shadows - Soft, elevated */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 16px 0 rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.12);
+    --shadow-xl: 0 24px 64px 0 rgb(0 0 0 / 0.16);
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --surface: 0 0% 10%;
+    --surface-elevated: 0 0% 12%;
+    
+    --foreground: 0 0% 98%;
+    --foreground-secondary: 0 0% 70%;
+    --foreground-tertiary: 0 0% 50%;
+    
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 25 55% 65%;
+    --primary-foreground: 0 0% 9%;
+    --primary-hover: 25 65% 75%;
+    --primary-light: 25 45% 15%;
+    
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+    
+    --accent: 25 65% 65%;
+    --accent-foreground: 0 0% 9%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border-subtle: 0 0% 15%;
+    --border: 0 0% 20%;
+    --border-strong: 0 0% 30%;
+    
+    --input: 0 0% 20%;
+    --ring: 25 55% 65%;
+    
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+    --shadow: 0 4px 16px 0 rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.7);
+    --shadow-xl: 0 24px 64px 0 rgb(0 0 0 / 0.8);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Typography System */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-light tracking-tight;
+  }
+  
+  h1 {
+    @apply text-5xl md:text-6xl lg:text-7xl;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  
+  h2 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+  
+  h3 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  
+  p {
+    @apply text-base leading-relaxed;
+  }
+  
+  /* Focus states for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Layout & Spacing */
+@layer components {
+  .container {
+    @apply mx-auto max-w-[1280px] px-6 sm:px-8 lg:px-12;
+  }
+  
+  .container-narrow {
+    @apply mx-auto max-w-[720px] px-6;
+  }
+  
+  .section-padding {
+    @apply py-24 md:py-32 lg:py-40;
+  }
+  
+  .section-padding-sm {
+    @apply py-16 md:py-20 lg:py-24;
+  }
+}
+
+/* Premium Effects */
+@layer utilities {
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-br from-foreground via-foreground to-foreground-secondary bg-clip-text text-transparent;
+  }
+  
+  .gradient-text-accent {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+    background-size: 200% auto;
+  }
+  
+  /* Glass morphism */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-[hsl(var(--border-subtle))];
+  }
+  
+  /* Elevated cards */
+  .card-elevated {
+    @apply bg-card rounded-2xl border border-[hsl(var(--border-subtle))] shadow-sm;
+    transition: all 0.3s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+  }
+  
+  .card-elevated:hover {
+    @apply border-[hsl(var(--border))] shadow-lg;
+    transform: translateY(-4px);
+  }
+  
+  /* Subtle background pattern */
+  .pattern-dots {
+    background-image: radial-gradient(circle, hsl(var(--border-subtle)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  
+  .pattern-grid {
+    background-image: 
+      linear-gradient(hsl(var(--border-subtle)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border-subtle)) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
+  /* Text balance for better typography */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Animated gradient background */
+  @keyframes gradient-shift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+  
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+  }
+  
+  /* Magnetic button effect */
+  .magnetic {
+    transition: transform 0.2s cubic-bezier(0.43, 0.13, 0.23, 0.96);
+  }
+}
