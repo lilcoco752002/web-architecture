@@ -1,3 +1,5 @@
+import { ClientStatus as DbClientStatus, ClientSource as DbClientSource } from '@prisma/client'
+import { normalizePagination } from '@/lib/pagination'
 import prisma from '@/lib/prisma'
 import { CreateClientInput, UpdateClientInput } from '@/lib/validations'
 import type { ClientStatus, ClientSource } from '@/types/prisma'
@@ -80,17 +82,16 @@ export class ClientService {
     page?: number
     pageSize?: number
   }) {
-    const page = params?.page || 1
-    const pageSize = params?.pageSize || 20
+    const { page, pageSize } = normalizePagination(params?.page, params?.pageSize ?? 20)
     const skip = (page - 1) * pageSize
 
     const where: any = {}
 
-    if (params?.status) {
+    if (params?.status && Object.values(DbClientStatus).includes(params.status as any)) {
       where.status = params.status
     }
 
-    if (params?.source) {
+    if (params?.source && Object.values(DbClientSource).includes(params.source as any)) {
       where.source = params.source
     }
 
@@ -233,55 +234,28 @@ export class ClientService {
    * Convert lead to client
    */
   static async convertLeadToClient(leadId: string, userId: string) {
-    const lead = await prisma.lead.findUnique({
-      where: { id: leadId },
+    return prisma.$transaction(async (tx) => {
+      const lead = await tx.lead.findUnique({ where: { id: leadId } })
+      if (!lead) throw new Error('Lead not found')
+      if (lead.status === 'CONVERTED') throw new Error('Lead already converted')
+      const client = await tx.client.create({
+        data: {
+          name: lead.name, email: lead.email, phone: lead.phone,
+          company: lead.company, website: lead.website, source: lead.source,
+          priority: lead.priority, createdById: userId, convertedAt: new Date(),
+        },
+      })
+      await tx.lead.update({
+        where: { id: leadId },
+        data: { status: 'CONVERTED', convertedAt: new Date(), convertedToClientId: client.id },
+      })
+      await tx.activityLog.create({
+        data: {
+          type: 'LEAD_CONVERTED', description: `Lead "${lead.name}" converted to client`,
+          userId, leadId, clientId: client.id, entityType: 'Lead', entityId: leadId,
+        },
+      })
+      return client
     })
-
-    if (!lead) {
-      throw new Error('Lead not found')
-    }
-
-    if (lead.status === 'CONVERTED') {
-      throw new Error('Lead already converted')
-    }
-
-    // Create client from lead
-    const client = await prisma.client.create({
-      data: {
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        company: lead.company,
-        website: lead.website,
-        source: lead.source,
-        status: 'NEW',
-        priority: lead.priority,
-        createdById: userId,
-        convertedAt: new Date(),
-      },
-    })
-
-    // Update lead status
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: {
-        status: 'CONVERTED',
-        convertedAt: new Date(),
-        convertedToClientId: client.id,
-      },
-    })
-
-    // Log activity
-    await ActivityLogService.log({
-      type: 'LEAD_CONVERTED',
-      description: `Lead "${lead.name}" converted to client`,
-      userId,
-      leadId,
-      clientId: client.id,
-      entityType: 'Lead',
-      entityId: leadId,
-    })
-
-    return client
   }
 }

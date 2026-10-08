@@ -64,6 +64,11 @@ export class PricingService {
    * Generate comprehensive quotation
    */
   static generateQuotation(params: PricingParams): PricingBreakdown {
+    if (!Number.isFinite(params.sqft) || params.sqft <= 0 ||
+        params.rooms.some(room => !Number.isFinite(room.sqft) || room.sqft <= 0) ||
+        params.rooms.reduce((sum, room) => sum + room.sqft, 0) > params.sqft) {
+      throw new Error('Invalid project or room area')
+    }
     // Calculate design fees
     const designFee = this.calculateDesignFees(params)
     
@@ -182,32 +187,14 @@ export class PricingService {
     let labor = params.sqft * rates.labor
     let materials = params.sqft * rates.materials
 
-    // Room-specific adjustments
-    params.rooms.forEach(room => {
-      const roomMultipliers: Record<string, number> = {
-        kitchen: 1.25,   // Higher complexity
-        bathroom: 1.20,
-        living: 1.0,
-        bedroom: 0.90,   // Lower complexity
-        other: 1.0,
-      }
-      
-      const multiplier = roomMultipliers[room.type] || 1.0
-      const roomLabor = (room.sqft / params.sqft) * labor * multiplier
-      const roomMaterials = (room.sqft / params.sqft) * materials * multiplier
-      
-      labor += roomLabor
-      materials += roomMaterials
-    })
-
-    // Condition adjustments
-    const avgCondition = params.rooms.reduce((sum, r) => {
-      const conditionScores = { good: 1, fair: 1.15, poor: 1.35 }
-      return sum + conditionScores[r.condition]
-    }, 0) / params.rooms.length
-    
-    labor *= avgCondition
-    materials *= avgCondition
+    // Adjust each room's base area once; preserve base rates for unspecified area.
+    const roomMultipliers = { kitchen: 1.25, bathroom: 1.20, living: 1, bedroom: 0.9, other: 1 }
+    const conditionMultipliers = { good: 1, fair: 1.15, poor: 1.35 }
+    for (const room of params.rooms) {
+      const adjustment = roomMultipliers[room.type] * conditionMultipliers[room.condition] - 1
+      labor += room.sqft * rates.labor * adjustment
+      materials += room.sqft * rates.materials * adjustment
+    }
 
     // Location cost index
     const locationMultiplier = this.getLocationMultiplier(params.location)
@@ -335,7 +322,7 @@ export class PricingService {
         due: 'At 50% construction completion',
       },
       final: {
-        amount: Math.round(total * 0.10),
+        amount: total - 3 * Math.round(total * 0.30),
         percentage: 10,
         due: 'At project completion',
       },

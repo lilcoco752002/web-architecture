@@ -78,7 +78,7 @@ export default async function ProjectsAdminPage({
               <option value="">All Status</option>
               <option value="PLANNING">Planning</option>
               <option value="IN_PROGRESS">In Progress</option>
-              <option value="REVIEW">Review</option>
+              <option value="ON_HOLD">On hold</option>
               <option value="COMPLETED">Completed</option>
               <option value="ON_HOLD">On Hold</option>
               <option value="CANCELLED">Cancelled</option>

@@ -69,8 +69,8 @@ export default async function BookingsPage({
             >
               <option value="">All Status</option>
               <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="COMPLETED">Completed</option>
+              <option value="ACCEPTED">Accepted</option>
+              <option value="REVIEWED">Reviewed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
             <Button type="submit">Filter</Button>
@@ -115,11 +115,11 @@ export default async function BookingsPage({
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            booking.status === 'CONFIRMED'
+                            booking.status === 'ACCEPTED'
                               ? 'bg-green-100 text-green-800'
                               : booking.status === 'PENDING'
                               ? 'bg-yellow-100 text-yellow-800'
-                              : booking.status === 'COMPLETED'
+                              : booking.status === 'REVIEWED'
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-red-100 text-red-800'
                           }`}
@@ -128,8 +128,8 @@ export default async function BookingsPage({
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        {booking.startTime
-                          ? new Date(booking.startTime).toLocaleString()
+                        {booking.preferredDate
+                          ? new Date(booking.preferredDate).toLocaleString()
                           : '-'}
                       </td>
                       <td className="py-3 px-4 text-sm text-muted-foreground">

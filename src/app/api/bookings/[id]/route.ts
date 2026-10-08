@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+
+import { updateBookingSchema } from '@/lib/validations'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -21,11 +25,8 @@ export async function GET(
 
     return NextResponse.json(booking)
   } catch (error) {
-    console.error('Error fetching booking:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch booking' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -40,15 +41,12 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const booking = await BookingService.updateBooking(params.id, body, session.user.id)
+    const booking = await BookingService.updateBooking(params.id, updateBookingSchema.parse(body), session.user.id)
 
     return NextResponse.json(booking)
   } catch (error) {
-    console.error('Error updating booking:', error)
-    return NextResponse.json(
-      { error: 'Failed to update booking' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -66,10 +64,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting booking:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete booking' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }

@@ -1,3 +1,5 @@
+import { BookingStatus as DbBookingStatus } from '@prisma/client'
+import { normalizePagination } from '@/lib/pagination'
 import prisma from '@/lib/prisma'
 import { CreateBookingInput, UpdateBookingInput } from '@/lib/validations'
 import type { BookingStatus } from '@/types/prisma'
@@ -23,7 +25,7 @@ export class BookingService {
     // Log activity if client exists
     if (client) {
       await ActivityLogService.log({
-        type: 'BOOKING_CREATED',
+        type: 'BOOKING_RECEIVED',
         description: `New booking received from ${data.name}`,
         userId: client.createdById,
         clientId: client.id,
@@ -64,13 +66,12 @@ export class BookingService {
     page?: number
     pageSize?: number
   }) {
-    const page = params?.page || 1
-    const pageSize = params?.pageSize || 20
+    const { page, pageSize } = normalizePagination(params?.page, params?.pageSize ?? 20)
     const skip = (page - 1) * pageSize
 
     const where: any = {}
 
-    if (params?.status) where.status = params.status
+    if (params?.status && Object.values(DbBookingStatus).includes(params.status as any)) where.status = params.status
     if (params?.clientId) where.clientId = params.clientId
 
     if (params?.search) {
@@ -126,7 +127,7 @@ export class BookingService {
 
     // Log activity
     await ActivityLogService.log({
-      type: 'BOOKING_UPDATED',
+      type: 'BOOKING_REVIEWED',
       description: `Booking status updated to ${data.status}`,
       userId,
       entityType: 'Booking',

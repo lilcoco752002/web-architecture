@@ -24,9 +24,13 @@ export default function ProjectsPageClient() {
 
   const filters = [
     { label: 'All Projects', value: 'all' },
-    { label: 'Residential', value: 'RESIDENTIAL' },
-    { label: 'Commercial', value: 'COMMERCIAL' },
-    { label: 'Hospitality', value: 'HOSPITALITY' },
+    { label: 'Web Design', value: 'WEB_DESIGN' },
+    { label: 'Web Development', value: 'WEB_DEVELOPMENT' },
+    { label: 'Mobile Apps', value: 'MOBILE_APP' },
+    { label: 'Branding', value: 'BRANDING' },
+    { label: 'SEO', value: 'SEO' },
+    { label: 'Consulting', value: 'CONSULTING' },
+    { label: 'Other', value: 'OTHER' },
   ]
 
   useEffect(() => {
@@ -46,8 +50,8 @@ export default function ProjectsPageClient() {
       const response = await fetch('/api/projects')
       if (response.ok) {
         const data = await response.json()
-        setProjects(data.projects || [])
-        setFilteredProjects(data.projects || [])
+        setProjects(data.data || [])
+        setFilteredProjects(data.data || [])
       }
     } catch (error) {
       console.error('Error fetching projects:', error)

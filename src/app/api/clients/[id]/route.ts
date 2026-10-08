@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -26,12 +29,9 @@ export async function GET(
     }
 
     return NextResponse.json(client)
-  } catch (error: any) {
-    console.error('Error fetching client:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch client', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -60,20 +60,9 @@ export async function PATCH(
     )
 
     return NextResponse.json(client)
-  } catch (error: any) {
-    console.error('Error updating client:', error)
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to update client', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -95,11 +84,8 @@ export async function DELETE(
     await ClientService.deleteClient(params.id)
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting client:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete client', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

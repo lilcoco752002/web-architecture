@@ -2,6 +2,7 @@
 
 export enum Role {
   ADMIN = 'ADMIN',
+  STAFF = 'STAFF',
   MANAGER = 'MANAGER',
   DESIGNER = 'DESIGNER',
   USER = 'USER',
@@ -45,6 +46,7 @@ export enum Permission {
 // Role to permissions mapping
 const rolePermissions: Record<Role, Permission[]> = {
   [Role.ADMIN]: Object.values(Permission), // Admin has all permissions
+  [Role.STAFF]: [Permission.READ_PROJECTS, Permission.WRITE_PROJECTS, Permission.READ_CLIENTS, Permission.WRITE_CLIENTS, Permission.READ_BOOKINGS, Permission.WRITE_BOOKINGS, Permission.READ_LEADS, Permission.WRITE_LEADS, Permission.READ_INVOICES, Permission.WRITE_INVOICES, Permission.READ_ANALYTICS],
   [Role.MANAGER]: [
     Permission.READ_USERS,
     Permission.READ_PROJECTS,

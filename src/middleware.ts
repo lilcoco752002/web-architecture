@@ -5,6 +5,7 @@ import { rateLimit } from './lib/rate-limit'
 
 // Define protected routes that require authentication
 const protectedPaths = [
+  '/api/clients',
   '/api/projects',
   '/api/services',
   '/api/bookings',
@@ -19,7 +20,6 @@ const protectedPaths = [
 const adminPaths = [
   '/api/users',
   '/api/analytics',
-  '/admin',
 ]
 
 // Public API routes that don't require authentication
@@ -35,8 +35,8 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') ||
-    publicPaths.some(path => pathname.startsWith(path))
+    pathname === '/admin/login' ||
+    publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
   ) {
     return NextResponse.next()
   }
@@ -54,8 +54,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Only these exact public operations bypass authentication.
+  if (
+    (request.method === 'POST' && ['/api/leads', '/api/bookings'].includes(pathname)) ||
+    (request.method === 'GET' && (pathname === '/api/projects' || pathname.startsWith('/api/projects/')))
+  ) return NextResponse.next()
+
   // Check authentication for protected routes
-  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
+  const isProtectedPath = [...protectedPaths, ...adminPaths].some(path => pathname === path || pathname.startsWith(path + '/'))
   if (isProtectedPath) {
     const token = await getToken({
       req: request,
@@ -90,7 +96,7 @@ export async function middleware(request: NextRequest) {
     // Add user info to headers for API routes
     if (pathname.startsWith('/api')) {
       const requestHeaders = new Headers(request.headers)
-      requestHeaders.set('x-user-id', token.sub || '')
+      requestHeaders.set('x-user-id', token.id || token.sub || '')
       requestHeaders.set('x-user-role', token.role || 'USER')
       requestHeaders.set('x-user-email', token.email || '')
 

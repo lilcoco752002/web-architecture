@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -32,12 +35,9 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(result)
-  } catch (error: any) {
-    console.error('Error fetching clients:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch clients', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -61,19 +61,8 @@ export async function POST(request: NextRequest) {
     const client = await ClientService.createClient(validatedData, session.user.id)
 
     return NextResponse.json(client, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating client:', error)
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create client', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

@@ -346,7 +346,7 @@ function ServiceCard({ service }: { service: Service }) {
           </p>
           
           <Link
-            href={`/services/${service.slug}`}
+            href="/services"
             className="group/link inline-flex items-center gap-2 text-xs font-ui font-semibold tracking-wide text-primary"
           >
             Explore Service

@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { BookingService } from '@/services/booking.service'
 import { createBookingSchema } from '@/lib/validations'
@@ -22,23 +25,12 @@ export async function POST(request: NextRequest) {
       { 
         success: true,
         message: 'Booking submitted successfully',
-        booking 
+        id: booking.id
       },
       { status: 201 }
     )
-  } catch (error: any) {
-    console.error('Error creating booking:', error)
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create booking', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

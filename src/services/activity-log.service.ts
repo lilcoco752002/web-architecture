@@ -1,3 +1,4 @@
+import { normalizePagination } from '@/lib/pagination'
 import prisma from '@/lib/prisma'
 import type { ActivityType } from '@/types/prisma'
 
@@ -21,7 +22,7 @@ export class ActivityLogService {
   static async log(params: LogActivityParams) {
     return prisma.activityLog.create({
       data: {
-        type: params.type as any,
+        type: params.type,
         description: params.description,
         userId: params.userId,
         metadata: params.metadata,
@@ -49,8 +50,7 @@ export class ActivityLogService {
     page?: number
     pageSize?: number
   }) {
-    const page = params?.page || 1
-    const pageSize = params?.pageSize || 50
+    const { page, pageSize } = normalizePagination(params?.page, params?.pageSize ?? 50)
     const skip = (page - 1) * pageSize
 
     const where: any = {}
