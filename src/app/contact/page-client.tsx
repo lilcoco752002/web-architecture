@@ -30,13 +30,12 @@ export default function ContactPageClient() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone || null,
-          company: formData.company || null,
+          phone: formData.phone || undefined,
+          company: formData.company || undefined,
           source: 'WEBSITE',
-          status: 'NEW',
-          projectType: formData.projectType || null,
-          budget: formData.budget || null,
-          notes: formData.message || null,
+          interestedIn: formData.projectType || undefined,
+          budget: formData.budget || undefined,
+          message: formData.message || undefined,
         }),
       })
 

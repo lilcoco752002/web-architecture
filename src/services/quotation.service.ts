@@ -1,3 +1,8 @@
+import { QuotationStatus as DbQuotationStatus } from '@prisma/client'
+import { randomUUID } from 'crypto'
+import { CreateQuotationInput, UpdateQuotationInput } from '@/lib/validations'
+import { calculateQuotationTotals } from '@/lib/quotation-totals'
+import { normalizePagination } from '@/lib/pagination'
 import { prisma } from '@/lib/prisma'
 
 interface QuotationFilters {
@@ -10,15 +15,14 @@ interface QuotationFilters {
 export class QuotationService {
   static async getAllQuotations(filters: QuotationFilters = {}) {
     const {
-      page = 1,
-      pageSize = 10,
       status,
       clientId,
     } = filters
 
+    const { page, pageSize } = normalizePagination(filters.page, filters.pageSize ?? 10)
     const where: any = {}
 
-    if (status) {
+    if (status && Object.values(DbQuotationStatus).includes(status as any)) {
       where.status = status
     }
 
@@ -65,16 +69,16 @@ export class QuotationService {
     })
   }
 
-  static async createQuotation(data: any) {
+  static async createQuotation(data: CreateQuotationInput) {
     return prisma.quotation.create({
-      data,
+      data: { ...data, ...calculateQuotationTotals(data), quotationNumber: `Q-${new Date().getFullYear()}-${randomUUID()}` },
       include: {
         client: true,
       },
     })
   }
 
-  static async updateQuotation(id: string, data: any) {
+  static async updateQuotation(id: string, data: UpdateQuotationInput) {
     return prisma.quotation.update({
       where: { id },
       data,

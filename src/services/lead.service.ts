@@ -1,4 +1,8 @@
+import { LeadStatus as DbLeadStatus, ClientSource as DbClientSource } from '@prisma/client'
+import { ClientService } from './client.service'
+import { normalizePagination } from '@/lib/pagination'
 import { prisma } from '@/lib/prisma'
+import { CreateLeadInput } from '@/lib/validations'
 
 interface LeadFilters {
   page?: number
@@ -11,20 +15,19 @@ interface LeadFilters {
 export class LeadService {
   static async getAllLeads(filters: LeadFilters = {}) {
     const {
-      page = 1,
-      pageSize = 10,
       status,
       source,
       search,
     } = filters
 
+    const { page, pageSize } = normalizePagination(filters.page, filters.pageSize ?? 10)
     const where: any = {}
 
-    if (status) {
+    if (status && Object.values(DbLeadStatus).includes(status as any)) {
       where.status = status
     }
 
-    if (source) {
+    if (source && Object.values(DbClientSource).includes(source as any)) {
       where.source = source
     }
 
@@ -68,9 +71,15 @@ export class LeadService {
     })
   }
 
-  static async createLead(data: any) {
+  static async createLead(data: CreateLeadInput, userId?: string) {
+    const owner = userId ? { id: userId } : await prisma.user.findFirst({
+      where: { role: 'ADMIN', status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    })
+    if (!owner) throw new Error('No active administrator configured')
     return prisma.lead.create({
-      data,
+      data: { ...data, createdById: owner.id },
     })
   }
 
@@ -88,25 +97,6 @@ export class LeadService {
   }
 
   static async convertLeadToClient(leadId: string, createdById: string) {
-    const lead = await prisma.lead.findUnique({ where: { id: leadId } })
-    if (!lead) throw new Error('Lead not found')
-
-    const client = await prisma.client.create({
-      data: {
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        company: lead.company,
-        source: lead.source,
-        createdById,
-      },
-    })
-
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: { status: 'CONVERTED' },
-    })
-
-    return client
+    return ClientService.convertLeadToClient(leadId, createdById)
   }
 }

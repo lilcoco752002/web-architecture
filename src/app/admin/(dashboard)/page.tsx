@@ -4,6 +4,7 @@ import { ClientService } from '@/services/client.service'
 import { ProjectService } from '@/services/project.service'
 import { BookingService } from '@/services/booking.service'
 import { ActivityLogService } from '@/services/activity-log.service'
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Briefcase, Calendar, TrendingUp } from 'lucide-react'
 
@@ -13,6 +14,8 @@ export const metadata = {
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions)
+
+  if (!session) redirect('/admin/login')
 
   // Fetch dashboard statistics
   const [clientStats, projectStats, bookingStats, recentActivity] = await Promise.all([
@@ -31,7 +34,7 @@ export default async function AdminDashboard() {
       color: 'text-blue-600',
     },
     {
-      title: 'Active Projects',
+      title: 'Total Projects',
       value: projectStats.total,
       change: `${projectStats.completedThisMonth} completed this month`,
       icon: Briefcase,
@@ -46,8 +49,8 @@ export default async function AdminDashboard() {
     },
     {
       title: 'Revenue',
-      value: '$125,000',
-      change: '+12% from last month',
+      value: '—',
+      change: 'Revenue tracking is not configured',
       icon: TrendingUp,
       color: 'text-purple-600',
     },

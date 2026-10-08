@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+
+import { publicProject } from '@/lib/public-project'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { ProjectService } from '@/services/project.service'
 
@@ -21,12 +25,9 @@ export async function GET(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    return NextResponse.json(project)
-  } catch (error: any) {
-    console.error('Error fetching project:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch project', message: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json(publicProject(project))
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

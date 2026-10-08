@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+
+import { updateQuotationSchema } from '@/lib/validations'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -21,11 +25,8 @@ export async function GET(
 
     return NextResponse.json(quotation)
   } catch (error) {
-    console.error('Error fetching quotation:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch quotation' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -40,15 +41,12 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const quotation = await QuotationService.updateQuotation(params.id, body)
+    const quotation = await QuotationService.updateQuotation(params.id, updateQuotationSchema.parse(body))
 
     return NextResponse.json(quotation)
   } catch (error) {
-    console.error('Error updating quotation:', error)
-    return NextResponse.json(
-      { error: 'Failed to update quotation' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -66,10 +64,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting quotation:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete quotation' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }

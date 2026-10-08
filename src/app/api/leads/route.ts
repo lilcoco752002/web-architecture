@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -28,11 +31,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching leads:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch leads' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -41,22 +41,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createLeadSchema.parse(body)
 
-    const lead = await LeadService.createLead(validatedData)
+    const session = await getServerSession(authOptions)
+    const lead = await LeadService.createLead(validatedData, session?.user.id)
 
-    return NextResponse.json(lead, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating lead:', error)
-    
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: 'Failed to create lead' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: true, id: lead.id }, { status: 201 })
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

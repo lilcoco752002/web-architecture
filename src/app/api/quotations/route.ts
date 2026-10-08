@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+
+import { createQuotationSchema } from '@/lib/validations'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -25,11 +29,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching quotations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch quotations' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }
 
@@ -41,14 +42,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const quotation = await QuotationService.createQuotation(body)
+    const quotation = await QuotationService.createQuotation(createQuotationSchema.parse(body))
 
     return NextResponse.json(quotation, { status: 201 })
   } catch (error) {
-    console.error('Error creating quotation:', error)
-    return NextResponse.json(
-      { error: 'Failed to create quotation' },
-      { status: 500 }
-    )
+    console.error(error)
+    return apiError(error)
   }
 }

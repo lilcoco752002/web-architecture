@@ -1,3 +1,6 @@
+import { publicProject } from '@/lib/public-project'
+export const dynamic = 'force-dynamic'
+
 import { ProjectService } from '@/services/project.service'
 import PremiumHomePage from './page-premium'
 import { generateMetadata as genMeta, generateOrganizationSchema, KEYWORDS } from '@/lib/seo'
@@ -20,7 +23,7 @@ export default async function Home() {
           __html: JSON.stringify(generateOrganizationSchema()),
         }}
       />
-      <PremiumHomePage featuredProjects={featuredProjects} />
+      <PremiumHomePage featuredProjects={featuredProjects.map(publicProject)} />
     </>
   )
 }

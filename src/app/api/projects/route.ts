@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+
+import { publicProject } from '@/lib/public-project'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -12,7 +16,8 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions)
     const searchParams = request.nextUrl.searchParams
     
-    const published = session ? searchParams.get('published') === 'true' : true
+    const publishedFilter = searchParams.get('published')
+    const published = session ? (publishedFilter === null ? undefined : publishedFilter === 'true') : true
     const featured = searchParams.get('featured') === 'true' || undefined
     const search = searchParams.get('search') || undefined
     const page = parseInt(searchParams.get('page') || '1')
@@ -26,12 +31,9 @@ export async function GET(request: NextRequest) {
       pageSize,
     })
 
-    return NextResponse.json(result)
-  } catch (error: any) {
-    console.error('Error fetching projects:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch projects', message: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json(session ? result : { ...result, data: result.data.map(publicProject) })
+  } catch (error) {
+    console.error(error)
+    return apiError(error)
   }
 }

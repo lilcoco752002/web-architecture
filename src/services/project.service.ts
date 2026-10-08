@@ -1,3 +1,5 @@
+import { ProjectStatus as DbProjectStatus } from '@prisma/client'
+import { normalizePagination } from '@/lib/pagination'
 import prisma from '@/lib/prisma'
 import { CreateProjectInput, UpdateProjectInput } from '@/lib/validations'
 import { generateSlug } from '@/lib/helpers'
@@ -120,13 +122,12 @@ export class ProjectService {
     page?: number
     pageSize?: number
   }) {
-    const page = params?.page || 1
-    const pageSize = params?.pageSize || 20
+    const { page, pageSize } = normalizePagination(params?.page, params?.pageSize ?? 20)
     const skip = (page - 1) * pageSize
 
     const where: any = {}
 
-    if (params?.status) where.status = params.status
+    if (params?.status && Object.values(DbProjectStatus).includes(params.status as any)) where.status = params.status
     if (params?.clientId) where.clientId = params.clientId
     if (params?.published !== undefined) where.published = params.published
     if (params?.featured !== undefined) where.featured = params.featured
